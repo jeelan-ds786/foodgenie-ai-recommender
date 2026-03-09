@@ -5,6 +5,10 @@ from sentence_transformers import SentenceTransformer
 model = SentenceTransformer('all-MiniLM-L6-v2')
 model.save('food_embedding_model')
 
+# Get embedding dimension without encoding
+embedding_dim = model.get_sentence_embedding_dimension()
+print(f"Embedding dimension: {embedding_dim}")
+
 dataFrame = pd.read_parquet("../../data/processed/dataPreprocessed_FoodGenie_Dataset.parquet")
 
 
@@ -17,20 +21,20 @@ dataFrame["search_text"] = (
     " | restaurant: " + dataFrame["restaurant_name"]
 )
 
-search_text_feature = dataFrame["search_text"].tolist()
+# search_text_feature = dataFrame["search_text"].tolist()
 
-embeddings = model.encode(search_text_feature, batch_size=64, show_progress_bar=True)
+# embeddings = model.encode(search_text_feature, batch_size=64, show_progress_bar=True)
 
-print(dataFrame.shape)
-print(embeddings.shape)
+# print(dataFrame.shape)
+# print(embeddings.shape)
 
-# Save embeddings
-np.save("../../data/embeddings/food_vectors.npy", embeddings)
+# # Save embeddings
+# np.save("../../data/embeddings/food_vectors.npy", embeddings)
 
-# Save metadata
-dataFrame.to_parquet(
-    "../../data/embeddings/food_metadata.parquet",
-    index=False
-)
+# # Save metadata
+# dataFrame.to_parquet(
+#     "../../data/embeddings/food_metadata.parquet",
+#     index=False
+# )
 
-print("Embeddings and metadata saved successfully")
+# print("Embeddings and metadata saved successfully")
