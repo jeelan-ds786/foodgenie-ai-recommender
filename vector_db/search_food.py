@@ -1,36 +1,34 @@
-import faiss
-import numpy as np
 import pandas as pd
+import numpy as np
 from sentence_transformers import SentenceTransformer
+model = SentenceTransformer('all-MiniLM-L6-v2')
+model.save('food_embedding_model')
 
-# load model
-model = SentenceTransformer("all-MiniLM-L6-v2")
+dataFrame = pd.read_parquet("../../data/processed/dataPreprocessed_FoodGenie_Dataset.parquet")
+  
+# Create context-based search_text
+dataFrame["search_text"] = (
+    "dish: " + dataFrame["dish_name"] +
+    " | category: " + dataFrame["category"] +
+    " | cuisine: " + dataFrame["cuisine"] +
+    " | type: " + dataFrame["veg_or_non_veg"] +
+    " | restaurant: " + dataFrame["restaurant_name"]
+)
 
-# load index 
-# index = faiss.read_index("../data/vector_db/food_index.faiss")
+search_text_feature = dataFrame["search_text"].tolist()
 
-# load IVF +PQ index
-index = faiss.read_index("../data/vector_db/food_index_ivfpq.faiss")
+embeddings = model.encode(search_text_feature, batch_size=64, show_progress_bar=True)
 
-# load metadata
-metadata = pd.read_parquet("../data/embeddings/food_metadata.parquet")
+print(dataFrame.shape)
+print(embeddings.shape)
 
+# Save embeddings
+np.save("../../data/embeddings/food_vectors.npy", embeddings)
 
-def search_food(query, top_k=5):
+# Save metadata
+dataFrame.to_parquet(
+    "../../data/embeddings/food_metadata.parquet",
+    index=False
+)
 
-    query_vector = model.encode([query])
-
-    distances, indices = index.search(query_vector, top_k)
-
-    results = metadata.iloc[indices[0]]
-
-    return results[[
-        "restaurant_name",
-        "dish_name",
-        "category",
-        "price",
-        "city"
-    ]]
-
-
-print(search_food("spicy idli"))
+print("Embeddings and metadata saved successfully")
