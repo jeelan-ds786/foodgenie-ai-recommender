@@ -5,7 +5,7 @@ from pathlib import Path
 from sentence_transformers import SentenceTransformer
 
 
-data = Path(__file__).parent.parent.parent.parent / "data"
+data = Path(__file__).parent.parent.parent.parent.parent / "data"
 
 
 #SLM model 

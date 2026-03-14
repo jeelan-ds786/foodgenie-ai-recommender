@@ -1,4 +1,4 @@
-from candidate_generator import generate_candidates
+from recommender.candidate_generator import generate_candidates
 
 query = "dosa with coconut chutney"
 
