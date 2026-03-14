@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from recommender.recommendation_pipeline import recommend_food
 from api.v1.routes.recommend import router as recommend_router
+from api.v1.routes.feedback import router as feedback_router
 
 
 #intializing the app
@@ -16,4 +16,10 @@ app.include_router(
     recommend_router,
     prefix="/v1",
     tags=["recommendations"]
+)
+
+app.include_router(
+    feedback_router,
+    prefix = "/v1",
+    tags=["feedback"]
 )
