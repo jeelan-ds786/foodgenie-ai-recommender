@@ -45,7 +45,9 @@ def rank_candidates(candidates: pd.DataFrame, context, user_id=None):
 
 
     candidates["similarity_norm"] = normalize(candidates["similarity_score"])
+
     candidates["rating_norm"] = normalize(candidates["rating_num"])
+
     candidates["popularity_norm"] = normalize(candidates["rating_count_num"])
 
     context_food_types = context["recommended_food_types"]
