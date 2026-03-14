@@ -40,6 +40,6 @@ def search_food(query, top_k=20):
     return results
 
 #generating the candidate
-def generate_candidates(query):
+def generate_candidates(query, top_k=20):
 
-    return search_food(query)
+    return search_food(query, top_k=top_k)
