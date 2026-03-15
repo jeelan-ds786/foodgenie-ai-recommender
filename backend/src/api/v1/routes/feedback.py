@@ -1,20 +1,17 @@
 from fastapi import APIRouter
-from api.schemas.feedback_schema import FeedBackRequest
-from reinforcement.feedback_engine import record_feedback
+from api.schemas.feedback_schema import FeedbackRequest
+from reinforcement.feedback_engine import store_feedback
 
 router = APIRouter()
 
 
 @router.post("/feedback")
-def feedback(request: FeedBackRequest):
+def feedback(request: FeedbackRequest):
 
-    print("hello")
-    
-    result = record_feedback(
+    store_feedback(
         user_id=request.user_id,
-        dish_name=request.dish_name,
-        action = request.action
+        food_id=request.food_id,
+        event=request.event
     )
 
-    return {"feedback_recorded":result}
-
+    return {"status": "feedback recorded"}

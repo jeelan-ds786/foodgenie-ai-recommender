@@ -12,14 +12,19 @@ app = FastAPI(
     version="1.0"
 )
 
-app.include_router(
-    recommend_router,
-    prefix="/v1",
-    tags=["recommendations"]
-)
+# V1 root endpoint
+@app.get("/v1/")
+def v1_root():
+    return {
+        "version": "1.0",
+        "endpoints": [
+            "POST /v1/recommend - Get food recommendations",
+            "POST /v1/feedback - Submit user feedback"
+        ]
+    }
 
-app.include_router(
-    feedback_router,
-    prefix = "/v1",
-    tags=["feedback"]
-)
+
+# Health check
+@app.get("/health")
+def health():
+    return {"status": "ok"}
