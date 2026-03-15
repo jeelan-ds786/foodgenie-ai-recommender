@@ -9,6 +9,6 @@ print("\nFoodGenie Recommendations:\n")
 
 print(
     results[
-        ["restaurant_name", "dish_name", "final_score", "city"]
+        ["restaurant_name", "dish_name", "ml_score", "city"]
     ]
 )
