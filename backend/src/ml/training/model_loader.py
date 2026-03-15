@@ -1,5 +1,13 @@
+import os
 import joblib
 from pathlib import Path
+
+# --------------------------------------------------
+# Thread Safety: Prevent segmentation faults
+# --------------------------------------------------
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 # --------------------------------------------------
 # PATH CONFIG
@@ -33,5 +41,7 @@ def get_model():
         print("Loading ML model:", MODEL_PATH)
 
         _model = joblib.load(MODEL_PATH)
+        
+        _model.set_params(nthread=1)
 
     return _model

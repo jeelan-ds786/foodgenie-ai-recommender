@@ -5,18 +5,16 @@ from ranking.ranking_engine import rank_candidates
 
 def test_ml_ranking():
 
-    query = "spicy chicken"
+    query = "chicken"
 
-    city = "Delhi"
+    city = "madurai"
 
     user_id = 1
 
-    # Step 1: retrieve candidates
     candidates = generate_candidates(query, top_k=200)
 
     print("\nCandidates retrieved:", len(candidates))
 
-    # Step 2: context features
     context = get_context_preferences(city)
 
     context["city"] = city
