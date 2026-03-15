@@ -18,8 +18,10 @@ ranked_results = rank_candidates(candidates, context)
 
 print("\nTop Ranked Foods:\n")
 
+score_col = "ml_score" if "ml_score" in ranked_results.columns else "similarity_score"
+
 print(
     ranked_results[
-        ["restaurant_name", "dish_name", "final_score", "city"]
+        ["restaurant_name", "dish_name", score_col, "city"]
     ].head(10)
 )

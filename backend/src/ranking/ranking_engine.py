@@ -1,5 +1,14 @@
 import pandas as pd
+
 from personalization.personalization_engine import get_user_preferences
+from features.feature_pipeline import store_candidate_features
+
+# Try loading ML ranker
+try:
+    from ml.training.rank_model import ml_rank
+    ML_MODEL_AVAILABLE = True
+except Exception:
+    ML_MODEL_AVAILABLE = False
 
 
 def normalize(series):
@@ -8,7 +17,6 @@ def normalize(series):
 
 def compute_context_score(row, context_food_types):
     """Check if food matches context preferences"""
-
     food_name = str(row["dish_name"]).lower()
 
     for keyword in context_food_types:
@@ -20,7 +28,6 @@ def compute_context_score(row, context_food_types):
 
 def compute_preference_score(row, user_preferences):
     """Check if dish matches user preference history"""
-
     dish = str(row["dish_name"]).lower()
 
     for pref in user_preferences:
@@ -30,10 +37,29 @@ def compute_preference_score(row, user_preferences):
     return 0.0
 
 
+def rule_based_rank(candidates: pd.DataFrame):
+    """
+    Fallback ranking if ML model is unavailable
+    """
+
+    candidates["final_score"] = (
+        0.45 * candidates["similarity_norm"]
+        + 0.20 * candidates["rating_norm"]
+        + 0.20 * candidates["popularity_norm"]
+        + 0.10 * candidates["context_score"]
+        + 0.05 * candidates["preference_score"]
+    )
+
+    return candidates.sort_values("final_score", ascending=False)
+
+
 def rank_candidates(candidates: pd.DataFrame, context, user_id=None):
 
     candidates = candidates.copy()
 
+    # --------------------------------------------------
+    # City Filtering
+    # --------------------------------------------------
 
     if "city" in context and context["city"]:
         city_filtered = candidates[
@@ -43,11 +69,12 @@ def rank_candidates(candidates: pd.DataFrame, context, user_id=None):
         if len(city_filtered) > 0:
             candidates = city_filtered
 
+    # --------------------------------------------------
+    # Feature Engineering
+    # --------------------------------------------------
 
     candidates["similarity_norm"] = normalize(candidates["similarity_score"])
-
     candidates["rating_norm"] = normalize(candidates["rating_num"])
-
     candidates["popularity_norm"] = normalize(candidates["rating_count_num"])
 
     context_food_types = context["recommended_food_types"]
@@ -60,7 +87,6 @@ def rank_candidates(candidates: pd.DataFrame, context, user_id=None):
     candidates["preference_score"] = 0
 
     if user_id is not None:
-
         user_preferences = get_user_preferences(user_id)
 
         candidates["preference_score"] = candidates.apply(
@@ -68,16 +94,23 @@ def rank_candidates(candidates: pd.DataFrame, context, user_id=None):
             axis=1
         )
 
+    # --------------------------------------------------
+    # Log Candidate Features
+    # --------------------------------------------------
 
-    candidates["final_score"] = (
+    # store_candidate_features(candidates)
 
-        0.45 * candidates["similarity_norm"]
-        + 0.20 * candidates["rating_norm"]
-        + 0.20 * candidates["popularity_norm"]
-        + 0.10 * candidates["context_score"]
-        + 0.05 * candidates["preference_score"]
-    )
+    # --------------------------------------------------
+    # Ranking Strategy
+    # --------------------------------------------------
 
-    ranked = candidates.sort_values("final_score", ascending=False)
+    if ML_MODEL_AVAILABLE:
+        try:
+            ranked = ml_rank(candidates)
+        except Exception:
+            # fallback if model crashes
+            ranked = rule_based_rank(candidates)
+    else:
+        ranked = rule_based_rank(candidates)
 
     return ranked

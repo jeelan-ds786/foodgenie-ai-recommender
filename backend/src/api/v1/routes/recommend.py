@@ -16,9 +16,19 @@ def recommend(request: RecommendationRequest):
         top_k=request.top_k
     )
 
+    # detect which score column exists
+    score_col = None
+
+    if "ml_score" in results.columns:
+        score_col = "ml_score"
+    elif "final_score" in results.columns:
+        score_col = "final_score"
+    else:
+        score_col = "similarity_score"
+
     response = results[
-        ["restaurant_name", "dish_name", "final_score", "city"]
-    ].to_dict(orient="records")
+        ["restaurant_name", "dish_name", score_col, "city"]
+    ].rename(columns={score_col: "score"}).to_dict(orient="records")
 
     return {
         "query": request.query,
