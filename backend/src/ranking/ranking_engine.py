@@ -2,6 +2,7 @@ import pandas as pd
 
 from personalization.personalization_engine import get_user_preferences
 from features.feature_pipeline import store_candidate_features
+from recommender.candidate_generator.candidate_generator import generate_candidates
 
 # Try loading ML ranker
 try:
@@ -114,3 +115,39 @@ def rank_candidates(candidates: pd.DataFrame, context, user_id=None):
         ranked = rule_based_rank(candidates)
 
     return ranked
+
+
+def recommend_food(query, context, user_id=None, top_k=10):
+    """
+    High-level orchestration function: candidate retrieval + ranking.
+    
+    Args:
+        query: Search query string
+        context: Context dict with 'recommended_food_types', optional 'city'
+        user_id: Optional user ID for personalization
+        top_k: Number of final recommendations to return
+    
+    Returns:
+        DataFrame with top_k ranked food recommendations
+    """
+
+    # --------------------------------------------------
+    # Stage 1: Candidate Retrieval (FAISS)
+    # --------------------------------------------------
+
+    candidates = generate_candidates(query, top_k=300)
+
+    if candidates is None or len(candidates) == 0:
+        return []
+
+    # --------------------------------------------------
+    # Stage 2: Ranking
+    # --------------------------------------------------
+
+    ranked = rank_candidates(candidates, context, user_id)
+
+    # --------------------------------------------------
+    # Return top recommendations
+    # --------------------------------------------------
+
+    return ranked.head(top_k)
