@@ -1,4 +1,5 @@
 from pydantic import BaseModel 
+from typing import Optional
 
 
 class FeedbackRequest(BaseModel):
@@ -6,4 +7,6 @@ class FeedbackRequest(BaseModel):
     event: str
 
 
-    
+class FeedbackActionRequest(BaseModel):
+    food_id: str
+    user_id: Optional[str] = None
