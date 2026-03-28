@@ -9,10 +9,13 @@ router = APIRouter()
 @router.post("/recommend")
 def recommend(request: RecommendationRequest):
 
+    # Use default user_id for now (auth removed)
+    user_id = request.user_id if hasattr(request, 'user_id') and request.user_id else 1
+    
     results = recommend_food(
         query=request.query,
         city=request.city,
-        user_id=request.user_id,
+        user_id=user_id,
         top_k=request.top_k
     )
 
@@ -33,5 +36,6 @@ def recommend(request: RecommendationRequest):
     return {
         "query": request.query,
         "city": request.city,
+        "user_id": user_id,
         "recommendations": response
     }
