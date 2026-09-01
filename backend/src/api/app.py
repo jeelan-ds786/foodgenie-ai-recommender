@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from api.v1.routes.recommend import router as recommend_router
 from api.v1.routes.feedback import router as feedback_router
 from api.v1.routes.auth import router as auth_router
+from api.v1.routes.restaurant import router as restaurant_router
 
 
 #intializing the app
@@ -39,6 +40,12 @@ app.include_router(
     auth_router,
     prefix="/v1/auth",
     tags=["auth"]
+)
+
+app.include_router(
+    restaurant_router,
+    prefix="/v1",
+    tags=["restaurant"]
 )
 
 

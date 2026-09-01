@@ -63,12 +63,13 @@ def rank_candidates(candidates: pd.DataFrame, context, user_id=None):
     # --------------------------------------------------
 
     if "city" in context and context["city"]:
-        city_filtered = candidates[
-            candidates["city"].str.lower() == context["city"].lower()
+        candidates = candidates[
+            candidates["city"].astype(str).str.strip().str.casefold()
+            == str(context["city"]).strip().casefold()
         ]
 
-        if len(city_filtered) > 0:
-            candidates = city_filtered
+        if candidates.empty:
+            return candidates
 
     # --------------------------------------------------
     # Feature Engineering
