@@ -9,16 +9,12 @@ export default function ResultsGrid({ foods }: Props) {
   if (!foods.length) return null;
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3,1fr)",
-        gap: "20px",
-        marginTop: "20px",
-      }}
-    >
+    <div className="results-grid">
       {foods.map((food, index) => (
-        <FoodCard key={index} food={food} />
+        <FoodCard
+          key={`${food.restaurant_name}-${food.dish_name}-${index}`}
+          food={food}
+        />
       ))}
     </div>
   );

@@ -1,4 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  ArrowRight,
+  Check,
+  Heart,
+  MapPin,
+  ShoppingBag,
+  Store,
+  X,
+} from "lucide-react";
 import type { FoodRecommendation } from "../types";
 import {
   likeFoodItem,
@@ -14,6 +24,7 @@ interface FoodCardProps {
 }
 
 export default function FoodCard({ food }: FoodCardProps) {
+  const navigate = useNavigate();
   const [isLiked, setIsLiked] = useState(false);
   const [isSkipped, setIsSkipped] = useState(false);
   const [isOrdered, setIsOrdered] = useState(false);
@@ -22,6 +33,22 @@ export default function FoodCard({ food }: FoodCardProps) {
   if (!food) {
     return null;
   }
+
+  const handleCardClick = () => {
+    const encodedName = encodeURIComponent(food.restaurant_name);
+    const params = new URLSearchParams({
+      dish: food.dish_name,
+      city: food.city,
+    });
+    navigate(`/restaurant/${encodedName}?${params.toString()}`);
+  };
+
+  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleCardClick();
+    }
+  };
 
   const handleLike = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -98,177 +125,73 @@ export default function FoodCard({ food }: FoodCardProps) {
   };
 
   return (
-    <div
-      style={{
-        border: "1px solid #ddd",
-        padding: "20px",
-        borderRadius: "10px",
-        backgroundColor: "#fff",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-        transition: "transform 0.2s, box-shadow 0.2s",
-        opacity: isSkipped ? 0.5 : 1,
-        position: "relative",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-5px)";
-        e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.15)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "0 2px 4px rgba(0,0,0,0.1)";
-      }}
+    <article
+      onClick={handleCardClick}
+      onKeyDown={handleCardKeyDown}
+      className={`food-card${isSkipped ? " is-skipped" : ""}`}
+      tabIndex={0}
+      aria-label={`View ${food.restaurant_name}`}
     >
-      <h3 style={{ margin: "0 0 10px 0", color: "#333", fontSize: "18px" }}>
-        {food.dish_name ?? "Unknown Dish"}
-      </h3>
-
-      <p style={{ margin: "5px 0", color: "#666", fontSize: "14px" }}>
-        🏪 {food.restaurant_name ?? "Unknown Restaurant"}
-      </p>
-
-      <p style={{ margin: "5px 0", color: "#666", fontSize: "14px" }}>
-        📍 {food.city ?? "Unknown City"}
-      </p>
-
-      <p style={{ margin: "10px 0 0 0", fontWeight: "bold", color: "#4CAF50" }}>
-        Score: {food.score?.toFixed(3) ?? "N/A"}
-      </p>
-
-      {/* Action Buttons */}
+      <div className="card-topline">
+        <span className="match-score">
+          {Math.round((food.score ?? 0) * 100)}% match
+        </span>
+        <ArrowRight size={19} aria-hidden="true" />
+      </div>
+      <h3>{food.dish_name ?? "Unknown Dish"}</h3>
+      <div className="food-meta">
+        <span>
+          <Store size={16} aria-hidden="true" />{" "}
+          {food.restaurant_name ?? "Unknown Restaurant"}
+        </span>
+        <span>
+          <MapPin size={16} aria-hidden="true" /> {food.city ?? "Unknown City"}
+        </span>
+      </div>
       <div
-        style={{
-          display: "flex",
-          gap: "10px",
-          marginTop: "15px",
-          justifyContent: "space-between",
-        }}
+        className="card-actions"
+        aria-label={`Actions for ${food.dish_name}`}
       >
         <button
           onClick={handleLike}
           disabled={isLoading}
-          style={{
-            flex: 1,
-            padding: "10px 15px",
-            border: "none",
-            borderRadius: "6px",
-            backgroundColor: isLiked ? "#4CAF50" : "#f0f0f0",
-            color: isLiked ? "#fff" : "#333",
-            fontSize: "14px",
-            fontWeight: "500",
-            cursor: isLoading ? "not-allowed" : "pointer",
-            transition: "all 0.2s",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "5px",
-          }}
-          onMouseEnter={(e) => {
-            if (!isLoading) {
-              (e.target as HTMLButtonElement).style.backgroundColor = isLiked
-                ? "#45a049"
-                : "#e0e0e0";
-            }
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor = isLiked
-              ? "#4CAF50"
-              : "#f0f0f0";
-          }}
+          className={isLiked ? "is-active like-action" : ""}
+          aria-pressed={isLiked}
         >
-          <span style={{ fontSize: "16px" }}>{isLiked ? "❤️" : "🤍"}</span>
-          <span>{isLiked ? "Liked" : "Like"}</span>
+          <Heart
+            size={17}
+            fill={isLiked ? "currentColor" : "none"}
+            aria-hidden="true"
+          />{" "}
+          {isLiked ? "Liked" : "Like"}
         </button>
-
         <button
           onClick={handleSkip}
           disabled={isLoading}
-          style={{
-            flex: 1,
-            padding: "10px 15px",
-            border: "none",
-            borderRadius: "6px",
-            backgroundColor: isSkipped ? "#9e9e9e" : "#f0f0f0",
-            color: isSkipped ? "#fff" : "#333",
-            fontSize: "14px",
-            fontWeight: "500",
-            cursor: isLoading ? "not-allowed" : "pointer",
-            transition: "all 0.2s",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "5px",
-          }}
-          onMouseEnter={(e) => {
-            if (!isLoading) {
-              (e.target as HTMLButtonElement).style.backgroundColor = isSkipped
-                ? "#757575"
-                : "#e0e0e0";
-            }
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor = isSkipped
-              ? "#9e9e9e"
-              : "#f0f0f0";
-          }}
+          className={isSkipped ? "is-active skip-action" : ""}
+          aria-pressed={isSkipped}
         >
-          <span style={{ fontSize: "16px" }}>⏭️</span>
-          <span>{isSkipped ? "Skipped" : "Skip"}</span>
+          <X size={17} aria-hidden="true" /> {isSkipped ? "Skipped" : "Skip"}
         </button>
-
         <button
           onClick={handleOrder}
           disabled={isLoading}
-          style={{
-            flex: 1,
-            padding: "10px 15px",
-            border: "none",
-            borderRadius: "6px",
-            backgroundColor: isOrdered ? "#FF9800" : "#FF5722",
-            color: "#fff",
-            fontSize: "14px",
-            fontWeight: "500",
-            cursor: isLoading ? "not-allowed" : "pointer",
-            transition: "all 0.2s",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "5px",
-          }}
-          onMouseEnter={(e) => {
-            if (!isLoading) {
-              (e.target as HTMLButtonElement).style.backgroundColor = isOrdered
-                ? "#F57C00"
-                : "#E64A19";
-            }
-          }}
-          onMouseLeave={(e) => {
-            (e.target as HTMLButtonElement).style.backgroundColor = isOrdered
-              ? "#FF9800"
-              : "#FF5722";
-          }}
+          className="order-action"
+          aria-pressed={isOrdered}
         >
-          <span style={{ fontSize: "16px" }}>{isOrdered ? "✅" : "🛒"}</span>
-          <span>{isOrdered ? "Ordered" : "Order"}</span>
+          {isOrdered ? (
+            <Check size={17} aria-hidden="true" />
+          ) : (
+            <ShoppingBag size={17} aria-hidden="true" />
+          )}
+          {isOrdered ? "Ordered" : "Order"}
         </button>
       </div>
-
-      {/* Loading indicator */}
       {isLoading && (
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            backgroundColor: "rgba(255, 255, 255, 0.9)",
-            padding: "10px 20px",
-            borderRadius: "6px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-          }}
-        >
-          Loading...
+        <div className="card-loading">
+          <span className="loader" aria-label="Saving feedback" />
         </div>
       )}
-    </div>
+    </article>
   );
 }

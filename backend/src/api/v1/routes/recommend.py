@@ -1,13 +1,13 @@
 from fastapi import APIRouter
 
 from api.schemas.recommend_schema import RecommendationRequest
-from recommender.recommendation_pipeline import recommend_food
 
 router = APIRouter()
 
 
 @router.post("/recommend")
 def recommend(request: RecommendationRequest):
+    from recommender.recommendation_pipeline import recommend_food
 
     # Use default user_id for now (auth removed)
     user_id = request.user_id if hasattr(request, 'user_id') and request.user_id else 1
