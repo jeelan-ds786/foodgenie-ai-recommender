@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   ChefHat,
@@ -7,6 +7,8 @@ import {
   Leaf,
   MapPin,
   Search,
+  Sparkles,
+  Star,
   Store,
   Utensils,
 } from "lucide-react";
@@ -17,15 +19,20 @@ import {
 import CuisineRail from "../components/cuisinerail/CuisineRail";
 
 type DietFilter = "all" | "veg" | "non-veg";
+const ALL_CUISINES = "all";
 
 export default function RestaurantPage() {
   const { restaurantName } = useParams<{ restaurantName: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const selectedDish = searchParams.get("dish")?.trim() ?? "";
+  const selectedCity = searchParams.get("city")?.trim() || undefined;
   const [restaurant, setRestaurant] = useState<RestaurantDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [menuQuery, setMenuQuery] = useState("");
   const [dietFilter, setDietFilter] = useState<DietFilter>("all");
+  const [cuisineFilter, setCuisineFilter] = useState(ALL_CUISINES);
   const deferredMenuQuery = useDeferredValue(menuQuery);
 
   useEffect(() => {
@@ -36,7 +43,7 @@ export default function RestaurantPage() {
       setError(null);
 
       try {
-        const data = await fetchRestaurantDetails(restaurantName);
+        const data = await fetchRestaurantDetails(restaurantName, selectedCity);
         setRestaurant(data);
       } catch (err) {
         setError("Failed to load restaurant details. Please try again.");
@@ -47,7 +54,7 @@ export default function RestaurantPage() {
     };
 
     loadRestaurantDetails();
-  }, [restaurantName]);
+  }, [restaurantName, selectedCity]);
 
   if (loading) {
     return (
@@ -76,17 +83,39 @@ export default function RestaurantPage() {
   }
 
   const normalizedQuery = deferredMenuQuery.trim().toLocaleLowerCase();
-  const allDishes = restaurant.cuisines.flatMap((cuisine) => cuisine.dishes);
   const isVegetarian = (diet?: string) =>
     diet?.trim().toLocaleLowerCase() === "veg";
+  const selectedDishKey = selectedDish.toLocaleLowerCase();
+  const featuredMatch = restaurant.cuisines
+    .flatMap((cuisine) =>
+      cuisine.dishes.map((dish) => ({
+        dish,
+        cuisineName: cuisine.cuisine_name,
+      })),
+    )
+    .find(({ dish }) => dish.dish_name.toLocaleLowerCase() === selectedDishKey);
+  const allDishes = restaurant.cuisines.flatMap((cuisine) =>
+    cuisine.dishes.filter(
+      (dish) => dish.dish_name.toLocaleLowerCase() !== selectedDishKey,
+    ),
+  );
   const vegDishCount = allDishes.filter((dish) =>
     isVegetarian(dish.veg_or_non_veg),
   ).length;
   const nonVegDishCount = allDishes.length - vegDishCount;
   const filteredCuisines = restaurant.cuisines
+    .filter(
+      (cuisine) =>
+        cuisineFilter === ALL_CUISINES ||
+        cuisine.cuisine_name === cuisineFilter,
+    )
     .map((cuisine) => ({
       ...cuisine,
       dishes: cuisine.dishes.filter((dish) => {
+        if (dish.dish_name.toLocaleLowerCase() === selectedDishKey) {
+          return false;
+        }
+
         const matchesQuery =
           !normalizedQuery ||
           [dish.dish_name, dish.category, dish.veg_or_non_veg].some((value) =>
@@ -148,6 +177,56 @@ export default function RestaurantPage() {
       </section>
 
       <section className="menu-shell" aria-labelledby="menu-title">
+        {featuredMatch && (
+          <article
+            className="featured-dish"
+            aria-labelledby="featured-dish-name"
+          >
+            <div className="featured-dish-accent" aria-hidden="true">
+              <Sparkles size={38} />
+            </div>
+            <div className="featured-dish-content">
+              <span className="featured-dish-kicker">
+                <Sparkles size={14} aria-hidden="true" /> Your recommendation
+              </span>
+              <h2 id="featured-dish-name">{featuredMatch.dish.dish_name}</h2>
+              <p>
+                The dish that brought you here, featured from{" "}
+                {restaurant.restaurant_name}.
+              </p>
+              <div className="featured-dish-meta">
+                <span
+                  className={`diet-mark ${
+                    isVegetarian(featuredMatch.dish.veg_or_non_veg)
+                      ? "is-veg"
+                      : "is-non-veg"
+                  }`}
+                >
+                  {isVegetarian(featuredMatch.dish.veg_or_non_veg) ? (
+                    <Leaf size={14} aria-hidden="true" />
+                  ) : (
+                    <Drumstick size={14} aria-hidden="true" />
+                  )}
+                  {isVegetarian(featuredMatch.dish.veg_or_non_veg)
+                    ? "Veg"
+                    : "Non-veg"}
+                </span>
+                <span>{featuredMatch.cuisineName}</span>
+                <span>{featuredMatch.dish.category || "House specialty"}</span>
+                {featuredMatch.dish.rating !== undefined &&
+                  featuredMatch.dish.rating > 0 && (
+                    <span className="featured-dish-rating">
+                      <Star size={14} fill="currentColor" aria-hidden="true" />
+                      {featuredMatch.dish.rating.toFixed(1)}
+                      {Boolean(featuredMatch.dish.rating_count) &&
+                        ` (${featuredMatch.dish.rating_count?.toLocaleString()} ratings)`}
+                    </span>
+                  )}
+              </div>
+            </div>
+          </article>
+        )}
+
         <div className="menu-toolbar">
           <div>
             <span className="section-kicker">Explore the menu</span>
@@ -196,7 +275,32 @@ export default function RestaurantPage() {
           </div>
         </div>
 
-        {(menuQuery || dietFilter !== "all") && (
+        <div className="cuisine-filter" aria-label="Filter menu by cuisine">
+          <label htmlFor="cuisine-filter-select">Cuisine</label>
+          <select
+            id="cuisine-filter-select"
+            value={cuisineFilter}
+            onChange={(event) => setCuisineFilter(event.target.value)}
+          >
+            <option value={ALL_CUISINES}>All cuisines</option>
+            {restaurant.cuisines.map((cuisine) => {
+              const regularDishCount = cuisine.dishes.filter(
+                (dish) =>
+                  dish.dish_name.toLocaleLowerCase() !== selectedDishKey,
+              ).length;
+
+              return (
+                <option key={cuisine.cuisine_name} value={cuisine.cuisine_name}>
+                  {cuisine.cuisine_name} ({regularDishCount})
+                </option>
+              );
+            })}
+          </select>
+        </div>
+
+        {(menuQuery ||
+          dietFilter !== "all" ||
+          cuisineFilter !== ALL_CUISINES) && (
           <p className="menu-result-count" aria-live="polite">
             {visibleDishCount} {visibleDishCount === 1 ? "dish" : "dishes"}{" "}
             found
@@ -212,6 +316,7 @@ export default function RestaurantPage() {
               onClick={() => {
                 setMenuQuery("");
                 setDietFilter("all");
+                setCuisineFilter(ALL_CUISINES);
               }}
             >
               Clear filters
@@ -223,7 +328,11 @@ export default function RestaurantPage() {
               key={cuisine.cuisine_name}
               cuisineName={cuisine.cuisine_name}
               dishes={cuisine.dishes}
-              isFiltering={Boolean(normalizedQuery) || dietFilter !== "all"}
+              isFiltering={
+                Boolean(normalizedQuery) ||
+                dietFilter !== "all" ||
+                cuisineFilter !== ALL_CUISINES
+              }
             />
           ))
         )}

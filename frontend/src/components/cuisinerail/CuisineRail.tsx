@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ChevronDown, ChevronUp, Leaf, Star, Utensils } from "lucide-react";
 import type { Dish } from "../../api/restaurantApi";
 
@@ -16,10 +16,6 @@ export default function CuisineRail({
   isFiltering = false,
 }: CuisineRailProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-
-  useEffect(() => {
-    setIsExpanded(false);
-  }, [cuisineName, isFiltering]);
 
   const visibleDishes =
     isExpanded || isFiltering ? dishes : dishes.slice(0, INITIAL_DISH_COUNT);

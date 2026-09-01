@@ -35,9 +35,12 @@ export default function FoodCard({ food }: FoodCardProps) {
   }
 
   const handleCardClick = () => {
-    // Navigate to restaurant detail page
     const encodedName = encodeURIComponent(food.restaurant_name);
-    navigate(`/restaurant/${encodedName}`);
+    const params = new URLSearchParams({
+      dish: food.dish_name,
+      city: food.city,
+    });
+    navigate(`/restaurant/${encodedName}?${params.toString()}`);
   };
 
   const handleCardKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {

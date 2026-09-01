@@ -8,10 +8,13 @@ interface Props {
 export default function SearchBar({ onSearch }: Props) {
   const [query, setQuery] = useState("");
   const [city, setCity] = useState("Chennai");
+  const [isGlowing, setIsGlowing] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
+    setIsGlowing(true);
+    window.setTimeout(() => setIsGlowing(false), 900);
     onSearch(query.trim(), city);
   };
 
@@ -38,7 +41,11 @@ export default function SearchBar({ onSearch }: Props) {
           <option value="Salem">Salem</option>
         </select>
       </label>
-      <button type="submit" className="search-button" disabled={!query.trim()}>
+      <button
+        type="submit"
+        className={`search-button${isGlowing ? " is-glowing" : ""}`}
+        disabled={!query.trim()}
+      >
         Find my food <Search size={18} aria-hidden="true" />
       </button>
     </form>
