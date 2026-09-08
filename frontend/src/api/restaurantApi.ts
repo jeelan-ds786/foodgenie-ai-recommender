@@ -23,6 +23,29 @@ export interface RestaurantDetail {
   cuisines: Cuisine[];
 }
 
+export interface LocationResult {
+  detected_city: string;
+  available: boolean;
+  city: string;
+  suggested_city: string | null;
+  distance_km: number;
+}
+
+export async function fetchCities(): Promise<string[]> {
+  const response = await axios.get<{ cities: string[] }>(`${API_BASE_URL}/cities`);
+  return response.data.cities;
+}
+
+export async function fetchNearestCity(
+  latitude: number,
+  longitude: number
+): Promise<LocationResult> {
+  const response = await axios.get<LocationResult>(`${API_BASE_URL}/location/nearest`, {
+    params: { latitude, longitude },
+  });
+  return response.data;
+}
+
 export async function fetchRestaurantDetails(
   restaurantName: string,
   city?: string

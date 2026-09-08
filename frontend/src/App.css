@@ -93,6 +93,64 @@
 .search-panel select { width: 100%; min-width: 0; color: var(--ink); background: transparent; border: 0; outline: 0; font: 600 15px/1.2 var(--sans); }
 .search-panel input::placeholder { color: #98978e; font-weight: 400; }
 
+.location-button {
+  display: inline-grid;
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  place-items: center;
+  color: var(--green);
+  background: var(--mint);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.location-button:disabled { color: var(--muted); cursor: wait; opacity: .55; }
+.location-message {
+  grid-column: 1 / -1;
+  margin: 5px 10px 2px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+}
+.location-unavailable {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: 42px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  margin: 8px 0 0;
+  padding: 16px;
+  color: var(--ink);
+  background: #fff7ed;
+  border-top: 1px solid #f2c99b;
+  text-align: left;
+}
+.location-unavailable-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  color: var(--tomato-dark);
+  background: #ffe3c4;
+  border-radius: 50%;
+}
+.location-unavailable strong { display: block; font: 800 17px/1.25 var(--heading); }
+.location-unavailable p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.location-unavailable button {
+  min-height: 40px;
+  padding: 0 14px;
+  color: white;
+  background: var(--tomato);
+  border: 0;
+  border-radius: 6px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.location-unavailable button:hover { background: var(--tomato-dark); }
+
 .search-button {
   position: relative;
   isolation: isolate;
@@ -383,6 +441,8 @@
   .search-field, .location-field { min-height: 52px; }
   .location-field { border-top: 1px solid var(--line); border-left: 0; }
   .search-button { grid-column: auto; }
+  .location-unavailable { grid-template-columns: 42px 1fr; }
+  .location-unavailable button { grid-column: 1 / -1; }
   .results-section { padding: 46px 0 72px; }
   .results-grid { grid-template-columns: 1fr; }
   .results-heading h2 { font-size: 28px; }

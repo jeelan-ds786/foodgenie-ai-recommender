@@ -1,5 +1,10 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from functools import lru_cache
+from math import asin, cos, radians, sin, sqrt
+import re
+
+import geonamescache
 import pandas as pd
 from pathlib import Path
 
@@ -15,6 +20,73 @@ class RestaurantDetailResponse(BaseModel):
     city: str
     total_dishes: int
     cuisines: list[dict]
+
+
+@router.get("/cities")
+def get_cities():
+    df = pd.read_parquet(DATA_FILE, columns=["city"])
+    cities = sorted(df["city"].dropna().astype(str).unique().tolist())
+    return {"cities": cities}
+
+
+def _normalize_city_name(name: str):
+    return re.sub(r"[^a-z0-9]", "", name.lower())
+
+
+def _distance_km(latitude: float, longitude: float, city: dict):
+    latitude_delta = radians(city["latitude"] - latitude)
+    longitude_delta = radians(city["longitude"] - longitude)
+    origin_latitude = radians(latitude)
+    city_latitude = radians(city["latitude"])
+    haversine = (
+        sin(latitude_delta / 2) ** 2
+        + cos(origin_latitude) * cos(city_latitude) * sin(longitude_delta / 2) ** 2
+    )
+    return 6371 * 2 * asin(sqrt(haversine))
+
+
+@lru_cache(maxsize=1)
+def _location_data():
+    places = list(geonamescache.GeonamesCache().get_cities().values())
+    aliases = {}
+    for place in (place for place in places if place["countrycode"] == "IN"):
+        for name in [place["name"], *place.get("alternatenames", [])]:
+            aliases.setdefault(_normalize_city_name(name), []).append(place)
+
+    supported_cities = get_cities()["cities"]
+    supported_places = []
+    for city in supported_cities:
+        candidates = aliases.get(_normalize_city_name(city.replace("_", " ")), [])
+        if candidates:
+            place = max(candidates, key=lambda candidate: candidate.get("population", 0))
+            supported_places.append((city, place))
+
+    return places, supported_places
+
+
+@router.get("/location/nearest")
+def get_nearest_city(latitude: float, longitude: float):
+    if not -90 <= latitude <= 90 or not -180 <= longitude <= 180:
+        raise HTTPException(status_code=422, detail="Invalid latitude or longitude")
+
+    places, supported_places = _location_data()
+    detected_place = min(places, key=lambda place: _distance_km(latitude, longitude, place))
+    nearest_city, nearest_place = min(
+        supported_places,
+        key=lambda item: _distance_km(latitude, longitude, item[1]),
+    )
+    available_city = next(
+        (city for city, place in supported_places if place["geonameid"] == detected_place["geonameid"]),
+        None,
+    )
+
+    return {
+        "detected_city": detected_place["name"],
+        "available": available_city is not None,
+        "city": available_city or nearest_city,
+        "suggested_city": None if available_city else nearest_city,
+        "distance_km": round(_distance_km(latitude, longitude, nearest_place), 1),
+    }
 
 
 @router.get("/restaurant/{restaurant_name}")

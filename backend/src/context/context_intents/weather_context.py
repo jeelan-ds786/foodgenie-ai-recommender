@@ -15,7 +15,7 @@ def get_weather(city="Chennai"):
         
         weather = data["weather"][0]["main"].lower()
         return weather
-    except (requests.RequestException, KeyError, IndexError):
+    except (requests.RequestException, OSError, KeyError, IndexError):
         return "default"
 
 
